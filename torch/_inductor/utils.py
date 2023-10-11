@@ -1254,4 +1254,16 @@ aot_inductor_launcher = """
         return torch::aot_inductor::alloc_tensors_by_stealing_from_handles(
             output_handles.data(), output_handles.size());
     }
+
+    std::vector<std::string> get_call_spec() {
+        std::string in_spec;
+        std::string out_spec;
+        AOTI_RUNTIME_ERROR_CODE_CHECK(AOTInductorModelContainerGetCallSpec(
+            model_container.get(),
+            in_spec,
+            out_spec));
+        std::vector<std::string> call_spec = {in_spec, out_spec};
+        return call_spec;
+    }
+
 """

@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+from typing import Dict
 
 import torch
 import torch._export
@@ -58,18 +59,20 @@ class AOTInductorModelRunner:
     @classmethod
     def compile(cls, model, example_inputs, options=None, constraints=None):
         # The exact API is subject to change
-        so_path, exported = torch._export.aot_compile(
+        so_path = torch._export.aot_compile(
             model,
             example_inputs,
             options=options,
             constraints=constraints,
             remove_runtime_assertions=True,
         )
-        return so_path, exported
+        return so_path
 
     @classmethod
     def load(cls, so_path, example_inputs):
-        is_cpu = all(x.device.type == "cpu" for x in example_inputs)
+        is_cpu = all(
+            x.device.type == "cpu" for x in pytree.tree_flatten(example_inputs)[0]
+        )
         if IS_FBCODE:
             from .fb import test_aot_inductor_model_runner_pybind
 
@@ -81,33 +84,36 @@ class AOTInductorModelRunner:
             if is_cpu:
                 launcher = launcher.replace("false /*is_cpu*/", "true /*is_cpu*/")
 
-            optimized = torch.utils.cpp_extension.load_inline(
+            module = torch.utils.cpp_extension.load_inline(
                 name="aot_inductor",
                 cpp_sources=[launcher],
                 # use a unique build directory to avoid test interference
                 build_directory=tempfile.mkdtemp(),
-                functions=["run"],
+                functions=["run", "get_call_spec"],
                 extra_ldflags=[so_path],
                 with_cuda=not is_cpu,
-            ).run
+            )
+
+            call_spec = module.get_call_spec()
+            call_spec = (
+                pytree.treespec_loads(call_spec[0]),
+                pytree.treespec_loads(call_spec[1]),
+            )
+
+            def optimized(*args):
+                flat_inputs = fx_pytree.tree_flatten_spec((*args, {}), call_spec[0])
+                flat_outputs = module.run(flat_inputs)
+                return pytree.tree_unflatten(flat_outputs, call_spec[1])
 
         return optimized
 
     @classmethod
-    def run_compiled(cls, optimized, exported, example_inputs):
-        flat_example_inputs = fx_pytree.tree_flatten_spec(
-            (example_inputs, {}), exported.call_spec.in_spec
-        )
-        output_tensors = optimized(flat_example_inputs)
-        return pytree.tree_unflatten(output_tensors, exported.call_spec.out_spec)
-
-    @classmethod
     def run(cls, model, example_inputs, options=None, constraints=None):
-        so_path, exported = AOTInductorModelRunner.compile(
+        so_path = AOTInductorModelRunner.compile(
             model, example_inputs, options=options, constraints=constraints
         )
         optimized = AOTInductorModelRunner.load(so_path, example_inputs)
-        return AOTInductorModelRunner.run_compiled(optimized, exported, example_inputs)
+        return optimized(example_inputs)
 
     @classmethod
     def run_multiple(
@@ -117,7 +123,7 @@ class AOTInductorModelRunner:
         options=None,
         constraints=None,
     ):
-        so_path, exported = AOTInductorModelRunner.compile(
+        so_path = AOTInductorModelRunner.compile(
             model,
             list_example_inputs[0],
             options=options,
@@ -126,9 +132,7 @@ class AOTInductorModelRunner:
         optimized = AOTInductorModelRunner.load(so_path, list_example_inputs[0])
         list_output_tensors = []
         for example_inputs in list_example_inputs:
-            list_output_tensors.append(
-                AOTInductorModelRunner.run_compiled(optimized, exported, example_inputs)
-            )
+            list_output_tensors.append(optimized(example_inputs))
         return list_output_tensors
 
 
@@ -756,7 +760,7 @@ class AOTInductorTestsTemplate:
         with torch.cuda.device(0), config.patch(
             "aot_inductor.abi_compatible", self.abi_compatible
         ):
-            so_path, exported = AOTInductorModelRunner.compile(
+            so_path = AOTInductorModelRunner.compile(
                 model=Model(w1.cuda(0), w2.cuda(0)),
                 example_inputs=tuple(t.cuda(0) for t in inputs),
             )
@@ -766,9 +770,7 @@ class AOTInductorTestsTemplate:
             with torch.cuda.device(i):
                 example_inputs = tuple(t.cuda(i) for t in inputs)
                 optimized = AOTInductorModelRunner.load(so_path, example_inputs)
-                result_cuda = AOTInductorModelRunner.run_compiled(
-                    optimized, exported, example_inputs
-                )
+                result_cuda = optimized(example_inputs)
             self.assertTrue(same(result_cpu, result_cuda.cpu()))
 
     @requires_multigpu()
@@ -832,6 +834,22 @@ class AOTInductorTestsTemplate:
                     1,
                     exactly=True,
                 ).run(src_code)
+
+    def test_pytree_inputs(self):
+        class M(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+
+            def forward(self, x: Dict[str, torch.Tensor]):
+                add_ = torch.zeros(5)
+                mul_ = torch.ones(5)
+                for v in x.values():
+                    add_ += v
+                    mul_ *= v
+
+                return [add_, mul_]
+
+        self.check_model(M(), ({"x": torch.ones(5), "y": torch.ones(5)},))
 
 
 class AOTInductorTestABICompatibleCpu(TestCase):

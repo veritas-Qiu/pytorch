@@ -93,9 +93,6 @@ use_mixed_mm = False
 # (if force_mixed_mm is true, the use_mixed_mm flag will be ignored)
 force_mixed_mm = False
 
-# TODO: capture whether the graph is from export
-from_export = False
-
 # enable slow autotuning passes to select algorithms
 max_autotune = os.environ.get("TORCHINDUCTOR_MAX_AUTOTUNE") == "1"
 
@@ -452,6 +449,12 @@ class aot_inductor:
 
     # Wether to codegen abi compatible model.so
     abi_compatible = is_fbcode()
+
+    # Serialized tree spec for flattening inputs
+    serialized_in_spec = ""
+
+    # Serialized tree spec for flattening outputs
+    serialized_out_spec = ""
 
 
 class cuda:

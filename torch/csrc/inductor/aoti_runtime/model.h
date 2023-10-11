@@ -231,6 +231,14 @@ class AOTInductorModelBase {
     return constants_info_.at(idx).data_size;
   }
 
+  std::string get_in_spec() const {
+    return in_spec_;
+  }
+
+  std::string get_out_spec() const {
+    return out_spec_;
+  }
+
   void update_constants_map(std::shared_ptr<ConstantMap>&& constants_map) {
     constants_ = std::move(constants_map);
   }
@@ -285,6 +293,8 @@ class AOTInductorModelBase {
   std::vector<ParamInfo> inputs_info_;
   std::vector<ParamInfo> outputs_info_;
   std::vector<ConstInfo> constants_info_;
+  std::string in_spec_;
+  std::string out_spec_;
 
   std::shared_ptr<ConstantMap> constants_;
 

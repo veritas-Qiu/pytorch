@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string>
 
 // WARNING: Be careful when adding new includes here. This header will be used
 // in model.so, and should not refer to any aten/c10 headers except the stable
@@ -118,5 +119,10 @@ AOTIRuntimeError AOTInductorModelUpdateConstantsMap(
 
 // Delete an AOTInductorModel created by AOTInductorModelCreate.
 AOTIRuntimeError AOTInductorModelDelete(AOTInductorModelHandle model_handle);
+
+AOTIRuntimeError AOTInductorModelContainerGetCallSpec(
+    AOTInductorModelContainerHandle container_handle,
+    std::string& in_spec,
+    std::string& out_spec);
 
 } // extern "C"
