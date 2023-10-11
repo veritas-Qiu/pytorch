@@ -2332,28 +2332,55 @@ class MutationLayout(Layout):
         # NOTE: We must realize users of `dst` before we realize `src`, since
         # realization order determines scheduling order. Otherwise, src's
         # mutation would be scheduled before the existing users of dst!
-        V.graph.mark_buffer_mutated(dst.get_name())
+        realized_bufs = V.graph.mark_buffer_mutated(dst.get_name())
 
         if isinstance(src, TensorBox):
             src = src.data
 
-        # We copy the contents of src into dst. In most cases this should
-        # be fused into a single kernel by the scheduler.
-        # NOTE: We cannot change src's layout to mutate dst directly as this
-        # would alias src to dst, which is not correct as further mutations to
-        # dst would effect users of src.
-        src.realize_hint()
+        need_copy = True
 
-        src = Pointwise.create(
-            device=src.get_device(),
-            dtype=src.get_dtype(),
-            inner_fn=src.make_loader(),
-            ranges=[
-                V.graph.sizevars.guard_equals(a, b)
-                for a, b in zip(src.get_size(), dst.get_size())
-            ],
-        ).data
-        src.realize()
+        if (
+            isinstance(src.data, Buffer)
+            and isinstance(src.get_layout(), FlexibleLayout)
+            and not src.is_zero_elements()
+            and (
+                (src.get_name() in realized_bufs)
+                or (
+                    src.get_name() not in realized_bufs
+                    and (
+                        len(V.graph.name_to_users[src.get_name()]) == 0
+                        or (
+                            len(V.graph.name_to_users[src.get_name()]) == 1
+                            and V.graph.name_to_users[src.get_name()].get_name()
+                            == dst.get_name()
+                        )
+                    )
+                )
+            )
+        ):
+            # Skip the copy:
+            # Case 1: src created in above V.graph.mark_buffer_mutated
+            # Case 2: src not created in above V.graph.mark_buffer_mutated, but src has no users or 1 user of dst
+            need_copy = False
+
+        if need_copy:
+            # We copy the contents of src into dst. In most cases this should
+            # be fused into a single kernel by the scheduler.
+            # NOTE: We cannot change src's layout to mutate dst directly as this
+            # would alias src to dst, which is not correct as further mutations to
+            # dst would effect users of src.
+            src.realize_hint()
+
+            src = Pointwise.create(
+                device=src.get_device(),
+                dtype=src.get_dtype(),
+                inner_fn=src.make_loader(),
+                ranges=[
+                    V.graph.sizevars.guard_equals(a, b)
+                    for a, b in zip(src.get_size(), dst.get_size())
+                ],
+            ).data
+            src.realize()
 
         assert isinstance(src.data.layout, FlexibleLayout)
         src.data.layout = MutationLayout(dst)
