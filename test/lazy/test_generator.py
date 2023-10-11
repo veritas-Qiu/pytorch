@@ -1,8 +1,8 @@
 # Owner(s): ["oncall: jit"]
 
 import torch
-import torch._lazy.ts_backend
 import torch._lazy.metrics as metrics
+import torch._lazy.ts_backend
 from torch.testing._internal.common_utils import run_tests, skipIfTorchDynamo, TestCase
 
 torch._lazy.ts_backend.init()
@@ -57,26 +57,34 @@ class LazyGeneratorTest(TestCase):
             torch._lazy.mark_step()
 
             uncached_compile = metrics.counter_value("UncachedCompile")
-            assert uncached_compile == 1, f"Expected 1 uncached compiles, got {uncached_compile}"
+            assert (
+                uncached_compile == 1
+            ), f"Expected 1 uncached compiles, got {uncached_compile}"
 
             t = generate_tensor(2)
             torch._lazy.mark_step()
 
             uncached_compile = metrics.counter_value("UncachedCompile")
-            assert uncached_compile == 2, f"Expected 2 uncached compiles, got {uncached_compile}"
+            assert (
+                uncached_compile == 2
+            ), f"Expected 2 uncached compiles, got {uncached_compile}"
 
             t = generate_tensor(1)
             torch._lazy.mark_step()
 
             uncached_compile = metrics.counter_value("UncachedCompile")
-            assert uncached_compile == 2, f"Expected 2 uncached compiles, got {uncached_compile}"
+            assert (
+                uncached_compile == 2
+            ), f"Expected 2 uncached compiles, got {uncached_compile}"
             cached_compile = metrics.counter_value("CachedCompile")
-            assert cached_compile == 1, f"Expected 1 cached compile, got {cached_compile}"
+            assert (
+                cached_compile == 1
+            ), f"Expected 1 cached compile, got {cached_compile}"
 
         metrics.reset()
 
         latest_graph = torch._C._lazy_ts_backend._get_latest_computation_graph()
-        assert "torch.Generator(device=\"cpu\", seed=1)" in latest_graph
+        assert 'torch.Generator(device="cpu", seed=1)' in latest_graph
         assert "aten::uniform_" in latest_graph
 
 

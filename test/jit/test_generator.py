@@ -41,7 +41,6 @@ class TestGenerator(JitTestCase):
 
         self.assertEqual(eager_tensor, traced_tensor)
 
-
     def test_script(self):
         def f():
             generator = torch.Generator()
@@ -49,7 +48,7 @@ class TestGenerator(JitTestCase):
             generator.manual_seed(2023)
             generator.initial_seed()
             tensor = torch.empty(2, 2)
-            tensor.normal_(-1., 1., generator=generator)
+            tensor.normal_(-1.0, 1.0, generator=generator)
             return tensor
 
         torch.manual_seed(1)
@@ -95,7 +94,9 @@ class TestGenerator(JitTestCase):
 
             def reset_parameters(self):
                 def reset_linear(module, generator):
-                    init.kaiming_uniform_(module.weight, a=math.sqrt(5), generator=generator)
+                    init.kaiming_uniform_(
+                        module.weight, a=math.sqrt(5), generator=generator
+                    )
                     if module.bias is not None:
                         fan_in, _ = init._calculate_fan_in_and_fan_out(module.weight)
                         bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0

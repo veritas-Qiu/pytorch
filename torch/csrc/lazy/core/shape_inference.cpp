@@ -1369,10 +1369,19 @@ std::vector<Shape> compute_shape_as_strided_scatter_symint(
   return {Shape(out_meta.scalar_type(), out_meta.sizes().vec())};
 }
 
-std::vector<Shape> compute_shape_normal_(at::Tensor & self, double mean, double std, c10::optional<at::Generator> generator) {
+std::vector<Shape> compute_shape_normal_(
+    at::Tensor& self,
+    double mean,
+    double std,
+    c10::optional<at::Generator> generator) {
   return {Shape(self.scalar_type(), self.sizes().vec())};
 }
-std::vector<Shape> compute_shape_uniform_(at::Tensor & self, double from, double to, c10::optional<at::Generator> generator) {
+
+std::vector<Shape> compute_shape_uniform_(
+    at::Tensor& self,
+    double mean,
+    double std,
+    c10::optional<at::Generator> generator) {
   return {Shape(self.scalar_type(), self.sizes().vec())};
 }
 

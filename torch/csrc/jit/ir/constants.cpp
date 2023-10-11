@@ -110,7 +110,7 @@ c10::optional<Value*> tryInsertConstant(
     n->s_(attr::value, ss.str());
     n->output()->setType(DeviceObjType::get());
   } else if (val.isGenerator()) {
-    auto generator =  val.toGenerator();
+    auto generator = val.toGenerator();
     n->ival_(attr::value, generator);
     n->i_(torch::jit::Symbol::attr("seed"), generator.current_seed());
     n->output()->setType(GeneratorType::get());
