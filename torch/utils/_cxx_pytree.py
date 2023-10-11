@@ -26,11 +26,12 @@ from typing import (
     Union,
 )
 
+from torch import _running_with_deploy
 from torch._C import _GLIBCXX_USE_CXX11_ABI
 from ._pytree import TreeSpec as PyTreeSpec
 
 try:
-    if _GLIBCXX_USE_CXX11_ABI:
+    if _running_with_deploy() and _GLIBCXX_USE_CXX11_ABI:
         raise ModuleNotFoundError
     import optree
 except ModuleNotFoundError:
