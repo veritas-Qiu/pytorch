@@ -1494,11 +1494,17 @@ def make_contiguous_strides_for(
     if not shape:
         return ()
 
+    def _ensure_at_least(a, thresh):
+        # sym_max() isn't supported for SingletonSymNode
+        if hasattr(a, "node") and a.node.singleton_int() is not None:
+            return a
+        return sym_max(a, thresh)
+
     multiplier = 1
     strides = []
     for l in reversed(shape):
         strides.append(multiplier)
-        multiplier *= sym_max(l, 1)
+        multiplier *= _ensure_at_least(l, 1)
 
     result = tuple(reversed(strides))
 
