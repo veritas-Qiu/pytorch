@@ -89,16 +89,20 @@ variable_list AccumulateGrad::apply_with_saved(
   at::Tensor grad_copy = variable.grad();
   saved.before(variable_copy);
   saved.before(grad_copy);
+  at::Tensor grads0 = saved.munge_sizes(grads[0], variable_copy, grad_copy);
   accumulateGrad(
       variable_copy,
       grad_copy,
-      grads[0],
+      grads0,
       0 /* num_expected_refs, 0 disables aliased reuse */,
       [&saved, this](const at::Tensor& grad_update) {
         saved.assign_mutable_grad(variable, grad_update);
       });
   saved.after(variable_copy);
   saved.after(grad_copy);
+
+  auto& hook = tensor_post_acc_grad_hooks();
+  TORCH_CHECK(hook == nullptr, "tensor_post_acc_grad_hooks nyi");
 
   return variable_list();
 }

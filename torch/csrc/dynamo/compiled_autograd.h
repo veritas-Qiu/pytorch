@@ -461,8 +461,15 @@ class CompiledNodeArgs {
 struct TraceState {
   TraceState(
       const std::vector<c10::optional<c10::SymInt>>& ss,
-      size_t num_outputs)
-      : sym_sizes_index(0), sym_sizes(ss), outputs(num_outputs) {}
+      size_t num_outputs,
+      at::Tensor (*munge_sizes_)(
+          const at::Tensor&,
+          const at::Tensor&,
+          const at::Tensor&))
+      : sym_sizes_index(0),
+        sym_sizes(ss),
+        outputs(num_outputs),
+        munge_sizes(munge_sizes_) {}
 
   void debug_asserts() {
     TORCH_INTERNAL_ASSERT(sym_sizes_index == sym_sizes.size());
@@ -476,6 +483,8 @@ struct TraceState {
   std::vector<c10::optional<c10::SymInt>> sym_sizes;
   variable_list outputs;
   std::vector<size_t> output_grad_targets;
+  at::Tensor (
+      *munge_sizes)(const at::Tensor&, const at::Tensor&, const at::Tensor&);
 };
 
 class SwapSavedVariables {
@@ -483,6 +492,13 @@ class SwapSavedVariables {
   // cache-miss. It swaps any 'lifted' inputs (tensors, symints) to proxy nodes,
   // allows tracing to happen, then swaps them back afterwards.
  public:
+  at::Tensor munge_sizes(
+      const at::Tensor& grad,
+      const at::Tensor& var,
+      const at::Tensor& var_grad) {
+    return state.munge_sizes(grad, var, var_grad);
+  }
+
   void before(at::Tensor& t) {
     TensorArg& arg = compiler.tensor_args.lookup(t);
     stashed_tensors.save(&t, std::move(t));
