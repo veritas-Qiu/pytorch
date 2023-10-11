@@ -200,11 +200,15 @@ static std::tuple<Tensor,optional<int64_t>> masked_select_batch_rule(
   return std::make_tuple(result, 0);
 }
 
-static std::tuple<Tensor,optional<int64_t>> masked_select_backward_batch_rule(
-    const Tensor& grad, optional<int64_t> grad_bdim,
-    const Tensor& self, optional<int64_t> self_bdim,
-    const Tensor& mask, optional<int64_t> mask_bdim) {
-  TORCH_CHECK(!mask_bdim.has_value(),
+static std::tuple<Tensor, optional<int64_t>> masked_select_backward_batch_rule(
+    const Tensor& grad,
+    optional<int64_t> grad_bdim,
+    const Tensor& self,
+    optional<int64_t> self_bdim,
+    const Tensor& mask,
+    optional<int64_t> mask_bdim) {
+  TORCH_CHECK(
+      !mask_bdim.has_value(),
       "vmap: Attempted to vmap over `mask` in torch.masked_select_backward(grad, self, mask) ",
       "We cannot support this because for each batch this would return a ",
       "differently shaped Tensor. "
@@ -221,7 +225,8 @@ static std::tuple<Tensor,optional<int64_t>> masked_select_backward_batch_rule(
   self_ = ensure_has_bdim(self_, self_bdim.has_value(), batch_size);
   grad_ = ensure_has_bdim(grad_, grad_bdim.has_value(), batch_size);
 
-  const auto result = at::masked_select_backward(grad_, self_.contiguous(), mask);
+  const auto result =
+      at::masked_select_backward(grad_, self_.contiguous(), mask);
   return std::make_tuple(result, 0);
 }
 
