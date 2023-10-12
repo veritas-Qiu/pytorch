@@ -1340,9 +1340,12 @@ def method_to_operator(method):
         op = getattr(operator, method_attr)
     return op
 
-def cast_symbool_to_symint_guardless(symbool: torch.SymBool) -> torch.SymInt:
-    int_sym = sympy.Piecewise((1, symbool.node.expr), (0, True))
-    return symbool.node.shape_env.create_symintnode(int_sym, hint=int(symbool.node.require_hint()))
+
+def _if_then_else(bool_expr, then_expr, else_expr):
+    if bool_expr:
+        return then_expr
+    else:
+        return else_expr
 
 SYMPY_INTERP = {
     'Abs': operator.abs,
@@ -1360,7 +1363,7 @@ SYMPY_INTERP = {
     'IsNonOverlappingAndDenseIndicator': eval_is_non_overlapping_and_dense,
     'floor': math.floor,
     'ceiling': math.ceil,
-    'cast_symbool_to_symint_guardless': cast_symbool_to_symint_guardless,
+    'ITE': _if_then_else,
 }
 
 always_float_magic_methods = {"truediv", "sym_float", "sym_sqrt", "pow"}
@@ -3503,7 +3506,7 @@ class ShapeEnv:
                 assert symbol.is_integer
                 g_lower, g_upper = self.var_to_guards.get(symbol, (None, None))
                 bounds = []
-                if r.lower != -sympy.oo and g_lower is None:
+                if r.lower != -sympy.oo and r.lower > -sys.maxsize and g_lower is None:
                     if any(is_dim(source) for source in sources):
                         self.dim_constraints.add(sympy.Ge(symbol, r.lower))
                     bounds.append(str(r.lower))
