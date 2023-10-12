@@ -1061,7 +1061,7 @@ class SymNode:
     def is_constant(self):
         return False
 
-def is_symbolic(val: Union[int, SymInt, float, SymFloat, bool, SymBool]) -> bool:
+def is_symbolic(val: Union[SymInt, float, SymFloat, bool, SymBool]) -> bool:
     if isinstance(val, (int, float, bool)):
         return False
     return val.node.is_symbolic()
@@ -1552,7 +1552,7 @@ def _make_user_magic(method, user_type):
     else:
         method_attr = method
 
-    def get_constant(x: Union[SymInt, int, SymFloat, float, SymBool, bool]):
+    def get_constant(x: Union[SymInt, SymFloat, float, SymBool, bool]):
         if isinstance(x, (int, float, bool)):
             return x
         if isinstance(x, SymBool):

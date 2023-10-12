@@ -5433,8 +5433,8 @@ def scalar_tensor(
 
 def _uniform_helper(
     shape: ShapeType,
-    low: Union[bool, int, float] = 0.0,
-    high: Union[bool, int, float] = 1.0,
+    low: Union[bool, float] = 0.0,
+    high: Union[bool, float] = 1.0,
     *,
     dtype: torch.dtype,
     device: DeviceLikeType,

@@ -865,7 +865,7 @@ def tanhshrink(a: TensorLikeType) -> TensorLikeType:
 def threshold(
     a: TensorLikeType,
     threshold: NumberType,
-    value: Union[bool, int, float],
+    value: Union[bool, float],
     inplace: bool = False,
 ) -> TensorLikeType:
     """

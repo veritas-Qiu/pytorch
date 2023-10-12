@@ -1,5 +1,5 @@
 """Functional interface"""
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple
 import math
 import warnings
 import importlib
@@ -1023,7 +1023,7 @@ def max_unpool3d(
 
 
 def lp_pool2d(
-    input: Tensor, norm_type: Union[int, float],
+    input: Tensor, norm_type: float,
     kernel_size: BroadcastingList2[int],
     stride: Optional[BroadcastingList2[int]] = None,
     ceil_mode: bool = False
@@ -1048,7 +1048,7 @@ def lp_pool2d(
 
 
 def lp_pool1d(
-    input: Tensor, norm_type: Union[int, float],
+    input: Tensor, norm_type: float,
     kernel_size: int,
     stride: Optional[BroadcastingList1[int]] = None,
     ceil_mode: bool = False

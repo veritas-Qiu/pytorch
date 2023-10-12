@@ -11314,7 +11314,7 @@ dedent """
 
     def test_union_to_number(self):
         @torch.jit.script
-        def fn(x: Union[int, complex, float], y: Union[int, complex, float]):
+        def fn(x: complex, y: complex):
             return x + y
         FileCheck().check(": Scalar):").run(fn.graph)
 

@@ -2769,7 +2769,7 @@ svd = _make_prim(
 def _normal_meta(
     shape: ShapeType,
     *,
-    mean: Union[float, complex],
+    mean: complex,
     std: float,
     dtype: torch.dtype,
     device: torch.device,
@@ -2792,7 +2792,7 @@ def _normal_meta(
 def _normal_aten(
     shape: ShapeType,
     *,
-    mean: Union[float, complex],
+    mean: complex,
     std: float,
     dtype: torch.dtype,
     device: torch.device,

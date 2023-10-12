@@ -1076,9 +1076,7 @@ class FullyShardedDataParallel(nn.Module, _FSDPState):
                 m._sync_gradients = old_flag
 
     @torch.no_grad()
-    def clip_grad_norm_(
-        self, max_norm: Union[float, int], norm_type: Union[float, int] = 2.0
-    ) -> torch.Tensor:
+    def clip_grad_norm_(self, max_norm: float, norm_type: float = 2.0) -> torch.Tensor:
         """
         Clips the gradient norm of all parameters. The norm is computed over
         all parameters' gradients as viewed as a single vector, and the

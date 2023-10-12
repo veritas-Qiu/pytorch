@@ -2321,8 +2321,8 @@ def log_sigmoid_forward(self: Tensor) -> Tuple[Tensor, Tensor]:
 @out_wrapper()
 def uniform(
     x: Tensor,
-    low: Union[bool, int, float] = 0.0,
-    high: Union[bool, int, float] = 1.0,
+    low: Union[bool, float] = 0.0,
+    high: Union[bool, float] = 1.0,
 ):
     return prims._uniform_helper(
         x.shape,
